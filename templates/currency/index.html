@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Valyuta kurslari — UZLIFE{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+    <h1 class="page-head__title">Valyuta kurslari</h1>
+    <p class="page-head__note">
+        Manba: O‘zbekiston Markaziy banki (CBU)
+        {% if updated_at %} · yangilangan: {{ updated_at|date:'d.m.Y' }}{% endif %}
+    </p>
+</div>
+
+{# Chap: kalkulyator · O'ng: pul birliklari ro'yxati #}
+<div class="fx-layout">
+
+{# ==================== Valyuta kalkulyatori ==================== #}
+{% if items %}
+<section class="calc">
+    <div class="calc__head">
+        <h2 class="calc__title"><i class="fa-solid fa-calculator"></i> Valyuta kalkulyatori</h2>
+        <span class="calc__note">Markaziy bankning rasmiy kursi bo‘yicha</span>
+    </div>
+
+    <div class="calc__body">
+        <div class="calc__side">
+            <label class="calc__label" for="calcFromAmount">Sotmoqchiman</label>
+            <div class="calc__field">
+                <input type="text" inputmode="decimal" id="calcFromAmount" class="calc__input" value="1">
+                <select id="calcFromCode" class="calc__select" aria-label="Qaysi valyutani sotasiz"></select>
+            </div>
+        </div>
+
+        <button type="button" class="calc__swap" id="calcSwap" aria-label="Valyutalarni almashtirish">
+            <i class="fa-solid fa-right-left"></i>
+        </button>
+
+        <div class="calc__side">
+            <label class="calc__label" for="calcToAmount">Olmoqchiman</label>
+            <div class="calc__field">
+                <input type="text" inputmode="decimal" id="calcToAmount" class="calc__input" value="">
+                <select id="calcToCode" class="calc__select" aria-label="Qaysi valyutani olasiz"></select>
+            </div>
+        </div>
+    </div>
+
+    <p class="calc__rate" id="calcRate"></p>
+</section>
+{% endif %}
+
+<section class="fx-list">
+    <h2 class="fx-list__title"><i class="fa-solid fa-coins"></i> Pul birliklari</h2>
+    <div class="fx-grid">
+    {% for item in items %}
+        <a href="{{ item.currency.get_absolute_url }}" class="fx-card">
+            <div class="fx-card__head">
+                <span class="fx-card__flag">{{ item.currency.flag_emoji }}</span>
+                <div>
+                    <span class="fx-card__code">{{ item.currency.code }}</span>
+                    <span class="fx-card__name">{{ item.currency.name }}</span>
+                </div>
+            </div>
+            <div class="fx-card__rate">
+                {{ item.rate.rate|floatformat:2 }} <span class="fx-card__unit">so‘m</span>
+            </div>
+            <div class="fx-card__foot">
+                {% if item.rate.is_up %}
+                    <span class="trend trend--up"><i class="fa-solid fa-caret-up"></i> {{ item.rate.diff|floatformat:2 }}</span>
+                {% elif item.rate.is_down %}
+                    <span class="trend trend--down"><i class="fa-solid fa-caret-down"></i> {{ item.rate.diff|floatformat:2|cut:"-" }}</span>
+                {% else %}
+                    <span class="trend">o‘zgarishsiz</span>
+                {% endif %}
+                <span class="fx-card__more">Batafsil <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+        </a>
+    {% empty %}
+        <p class="dials__empty">Kurs ma’lumoti hali yuklanmagan.</p>
+    {% endfor %}
+    </div>
+</section>
+
+</div>{# /fx-layout #}
+
+{% if items %}{{ converter_json|json_script:"calc-data" }}{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if items %}
+<script>
+(function () {
+    var dataEl = document.getElementById('calc-data');
+    if (!dataEl) return;
+    var options = JSON.parse(dataEl.textContent).options;
+
+    var fromAmount = document.getElementById('calcFromAmount');
+    var toAmount = document.getElementById('calcToAmount');
+    var fromCode = document.getElementById('calcFromCode');
+    var toCode = document.getElementById('calcToCode');
+    var rateNote = document.getElementById('calcRate');
+
+    // Tanlov ro'yxatlarini to'ldirish
+    options.forEach(function (o) {
+        [fromCode, toCode].forEach(function (sel) {
+            var opt = document.createElement('option');
+            opt.value = o.code;
+            opt.textContent = o.flag + ' ' + o.code + ' — ' + o.name;
+            sel.appendChild(opt);
+        });
+    });
+    // Boshlanishi: USD → UZS (odam eng ko'p shuni qaraydi)
+    fromCode.value = options.length > 1 ? options[1].code : 'UZS';
+    toCode.value = 'UZS';
+
+    function rateOf(code) {
+        var found = options.filter(function (o) { return o.code === code; })[0];
+        return found ? found.rate : 1;
+    }
+
+    function parseAmount(str) {
+        // Foydalanuvchi "1 234,56" ham, "1234.56" ham yozishi mumkin
+        var cleaned = String(str).replace(/\s/g, '').replace(',', '.');
+        var n = parseFloat(cleaned);
+        return isNaN(n) ? null : n;
+    }
+
+    function format(n, code) {
+        // Chet el valyutasida summa kichik bo'lishi mumkin (1000 so'm ≈ 0.0827 USD),
+        // shuning uchun unda ko'proq kasr xona kerak
+        var digits = (code === 'UZS') ? 2 : 4;
+        return n.toLocaleString('ru-RU', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: digits,
+        });
+    }
+
+    function convert(source) {
+        var from = fromCode.value, to = toCode.value;
+        var input = (source === 'to') ? toAmount : fromAmount;
+        var output = (source === 'to') ? fromAmount : toAmount;
+        var rFrom = (source === 'to') ? rateOf(to) : rateOf(from);
+        var rTo = (source === 'to') ? rateOf(from) : rateOf(to);
+
+        var value = parseAmount(input.value);
+        if (value === null) {
+            output.value = '';
+        } else {
+            output.value = format(value * rFrom / rTo, (source === 'to') ? from : to);
+        }
+        showRate();
+    }
+
+    function showRate() {
+        var from = fromCode.value, to = toCode.value;
+        if (from === to) {
+            rateNote.textContent = '';
+            return;
+        }
+        var one = rateOf(from) / rateOf(to);
+        rateNote.textContent = '1 ' + from + ' = ' + format(one, to) + ' ' + to;
+    }
+
+    fromAmount.addEventListener('input', function () { convert('from'); });
+    toAmount.addEventListener('input', function () { convert('to'); });
+    fromCode.addEventListener('change', function () { convert('from'); });
+    toCode.addEventListener('change', function () { convert('from'); });
+
+    document.getElementById('calcSwap').addEventListener('click', function () {
+        var tmp = fromCode.value;
+        fromCode.value = toCode.value;
+        toCode.value = tmp;
+        convert('from');
+    });
+
+    convert('from');
+})();
+</script>
+{% endif %}
+{% endblock %}

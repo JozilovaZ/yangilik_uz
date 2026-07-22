@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ city.name }} ob-havosi — UZLIFE{% endblock %}
+
+{% block content %}
+
+<nav class="crumbs">
+    <a href="{% url 'core:home' %}">Bosh sahifa</a>
+    <i class="fa-solid fa-angle-right"></i>
+    <a href="{% url 'weather:index' %}">Ob-havo</a>
+    <i class="fa-solid fa-angle-right"></i>
+    <span>{{ city.name }}</span>
+</nav>
+
+{# ==================== Ob-havo — batafsil (sana tablari + tafsilot) ==================== #}
+{% include 'weather/_forecast.html' with selected=city %}
+
+{# ---- Boshqa shaharlar ---- #}
+{% if others %}
+<section class="chips">
+    <span class="chips__label">Boshqa shaharlar:</span>
+    {% for o in others %}
+        <a href="{{ o.get_absolute_url }}" class="chip">{{ o.name }}</a>
+    {% endfor %}
+</section>
+{% endif %}
+
+{% endblock %}

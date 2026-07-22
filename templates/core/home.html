@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+
+{# ==================== 1) HERO — bosh yangiliklar ==================== #}
+<section class="hero">
+
+    {# Chap: bosh yangilik + ostida kichik kartalar #}
+    <div class="hero__main">
+
+        {% if featured %}
+        <a href="{{ featured.get_absolute_url }}" class="lead">
+            <div class="lead__img">
+                {% if featured.cover_image %}
+                    <img src="{{ featured.cover_image.url }}" alt="{{ featured.title }}" loading="lazy">
+                {% else %}
+                    <img src="https://picsum.photos/seed/uzlife-{{ featured.pk }}/880/495" alt="{{ featured.title }}" loading="lazy">
+                {% endif %}
+                <span class="lead__badge">{{ featured.category.name }}</span>
+            </div>
+            <div class="lead__body">
+                <h1 class="lead__title">{{ featured.title }}</h1>
+                <p class="lead__summary">{{ featured.summary }}</p>
+                <div class="lead__meta">
+                    <span><i class="fa-regular fa-clock"></i> {{ featured.published_at|date:"d.m.Y H:i" }}</span>
+                    <span class="dot"></span>
+                    <span><i class="fa-regular fa-eye"></i> {{ featured.views_count }}</span>
+                </div>
+            </div>
+        </a>
+        {% endif %}
+
+        <div class="subgrid">
+            {% for a in latest|slice:":3" %}
+            <a href="{{ a.get_absolute_url }}" class="scard">
+                <div class="scard__img">
+                    {% if a.cover_image %}
+                        <img src="{{ a.cover_image.url }}" alt="{{ a.title }}" loading="lazy">
+                    {% else %}
+                        <img src="https://picsum.photos/seed/uzlife-{{ a.pk }}/400/250" alt="{{ a.title }}" loading="lazy">
+                    {% endif %}
+                </div>
+                <div class="scard__body">
+                    <span class="kicker">{{ a.category.name }}</span>
+                    <h3 class="scard__title">{{ a.title }}</h3>
+                    {% if a.summary %}<p class="scard__desc">{{ a.summary|truncatechars:110 }}</p>{% endif %}
+                    <span class="scard__meta"><i class="fa-regular fa-clock"></i> {{ a.published_at|date:"H:i" }} · <i class="fa-regular fa-eye"></i> {{ a.views_count }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# O'ng: so'nggi yangiliklar lentasi #}
+    <aside class="latest">
+        <div class="section-head">
+            <h2 class="section-head__title">{% trans 'So‘nggi yangiliklar' %}</h2>
+        </div>
+
+        <div class="feed">
+            {% for a in latest|slice:"3:" %}
+            <a href="{{ a.get_absolute_url }}" class="feed__item">
+                <div class="feed__body">
+                    <span class="kicker">{{ a.category.name }}</span>
+                    <h3 class="feed__title">{{ a.title }}</h3>
+                </div>
+                <span class="feed__time">{{ a.published_at|date:"H:i" }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </aside>
+
+</section>
+
+{# ==================== Kategoriya bloklari (kun.uz uslubi) ==================== #}
+{% for block in news_blocks %}
+<section class="catblock">
+    <div class="section-head">
+        <h2 class="section-head__title">{{ block.category.name }}</h2>
+        <a href="{{ block.category.get_absolute_url }}" class="section-head__more">Barchasi <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="catblock__grid">
+        {% for a in block.articles %}
+        <a href="{{ a.get_absolute_url }}" class="scard">
+            <div class="scard__img">
+                {% if a.cover_image %}
+                    <img src="{{ a.cover_image.url }}" alt="{{ a.title }}" loading="lazy">
+                {% else %}
+                    <img src="https://picsum.photos/seed/uzlife-{{ a.pk }}/400/250" alt="{{ a.title }}" loading="lazy">
+                {% endif %}
+            </div>
+            <div class="scard__body">
+                <span class="kicker">{{ a.category.name }}</span>
+                <h3 class="scard__title">{{ a.title }}</h3>
+                {% if a.summary %}<p class="scard__desc">{{ a.summary|truncatechars:110 }}</p>{% endif %}
+                <span class="scard__meta"><i class="fa-regular fa-clock"></i> {{ a.published_at|date:"d.m H:i" }} · <i class="fa-regular fa-eye"></i> {{ a.views_count }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+
+{# ==================== Valyuta kartasi (gradient hero + suzuvchi kartalar) ==================== #}
+<h2 class="fx-hero__heading">
+    <img class="fx-hero__heading-icon"
+         src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b1.png"
+         alt="" loading="lazy">
+    {% trans 'Valyuta kursi' %}
+</h2>
+<section class="fx-hero">
+    {# Rasm tepasidagi sarlavha #}
+
+
+    {# Markazdagi rasm — pul/valyuta mavzusi #}
+    <div class="fx-hero__mock">
+        <img src="https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=900&h=560&q=80" alt="Oltin va valyuta" loading="lazy">
+    </div>
+
+    {# Rasm ustida suzuvchi oq kartalar #}
+    <div class="fx-hero__cards">
+        {% for d in currency_dials %}
+            {% with code=d.currency.code %}
+            <a href="{% url 'currency:index' %}" class="fx-note">
+                <div class="fx-note__top">
+                    <span class="fx-note__title">
+                        <img class="fx-note__flag"
+                             src="https://flagcdn.com/w40/{% if code == 'USD' %}us{% elif code == 'EUR' %}eu{% elif code == 'RUB' %}ru{% elif code == 'GBP' %}gb{% elif code == 'CHF' %}ch{% elif code == 'JPY' %}jp{% elif code == 'CNY' %}cn{% elif code == 'KZT' %}kz{% elif code == 'TRY' %}tr{% else %}un{% endif %}.png"
+                             alt="" loading="lazy">
+                        {{ code }}
+                    </span>
+                    {% if d.rate.is_up %}
+                        <span class="fx-pill fx-pill--up"><i class="fa-solid fa-caret-up"></i> {{ d.rate.diff|floatformat:0 }}</span>
+                    {% elif d.rate.is_down %}
+                        <span class="fx-pill fx-pill--down"><i class="fa-solid fa-caret-down"></i> {{ d.rate.diff|floatformat:0|cut:"-" }}</span>
+                    {% else %}
+                        <span class="fx-pill">0</span>
+                    {% endif %}
+                </div>
+                <p class="fx-note__desc">{% trans 'Markaziy bank rasmiy kursi · bugun' %}</p>
+                <div class="fx-note__code">
+                    <span class="fx-note__cur">{{ code }}</span> = <b>{{ d.rate.rate|floatformat:0 }}</b> {% trans 'so‘m' %}
+                </div>
+            </a>
+            {% endwith %}
+        {% empty %}
+            <span class="fx-hero__empty">{% trans 'Kurs ma’lumoti hali yuklanmagan.' %}</span>
+        {% endfor %}
+    </div>
+</section>
+
+{# Rasm ostida — valyuta haqida umumiy ma'lumot (3 ta karta) #}
+<section class="fx-info">
+    <div class="fx-info__col">
+        <span class="fx-info__icon"><i class="fa-solid fa-building-columns"></i></span>
+        <h3 class="fx-info__title">{% trans 'Rasmiy kurslar.' %}</h3>
+        <p class="fx-info__text">{% trans 'Barcha kurslar O‘zbekiston Markaziy banki (CBU) tomonidan e’lon qilinadigan rasmiy ma’lumotlarga asoslanadi.' %}</p>
+        <a href="{% url 'currency:index' %}" class="fx-info__link">{% trans 'Batafsil' %} <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="fx-info__col">
+        <span class="fx-info__icon"><i class="fa-solid fa-arrows-rotate"></i></span>
+        <h3 class="fx-info__title">{% trans 'Har kuni yangilanadi.' %}</h3>
+        <p class="fx-info__text">{% trans 'Valyuta kurslari har kuni avtomatik ravishda yangilanib, eng so‘nggi bozor holatini aks ettiradi.' %}</p>
+        <a href="{% url 'currency:index' %}" class="fx-info__link">{% trans 'Kurslar tarixi' %} <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="fx-info__col">
+        <span class="fx-info__icon"><i class="fa-solid fa-chart-line"></i></span>
+        <h3 class="fx-info__title">{% trans 'Dinamikani kuzating.' %}</h3>
+        <p class="fx-info__text">{% trans 'Har bir valyuta sahifasida o‘sish va tushish tendensiyalarini batafsil kuzatib boring.' %}</p>
+        <a href="{% url 'currency:index' %}" class="fx-info__link">{% trans 'Kurslarni ko‘rish' %} <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+</section>
+
+{# ============ Ob-havo (Apple uslubidagi bo'lim) ============ #}
+{% if weather_dials %}
+<section class="wxa">
+
+    {# CHAP: sarlavha + ochiluvchi bo'limlar #}
+    <div class="wxa__left">
+        <span class="wxa__kicker"><i class="fa-solid fa-location-dot"></i> {% trans 'Ob-havo' %} · {{ weather_dials.city.name }}</span>
+
+        <div class="wxa__acc">
+            <div class="wxa__item is-open">
+                <button type="button" class="wxa__q">{% trans 'Bugungi ob-havo' %} <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="wxa__a">
+                    <p>{{ weather_dials.city.name }}da bugun havo <b>{{ weather_dials.today.get_condition_display|lower }}</b>.
+                       Kunduzi eng yuqori harorat {{ weather_dials.today.temp_max|stringformat:'+d' }}°,
+                       kechasi {{ weather_dials.today.temp_min|stringformat:'+d' }}° gacha tushadi.</p>
+                    <a href="{{ weather_dials.city.get_absolute_url }}" class="wxa__link">{% trans 'Soatlik prognoz' %} <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="wxa__item">
+                <button type="button" class="wxa__q">{% trans 'Keyingi kunlar' %} <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="wxa__a">
+                    <div class="wxa__days">
+                        {% for f in weather_dials.next_days %}
+                            <a href="{{ weather_dials.city.get_absolute_url }}" class="wxa__day">
+                                <span class="wxa__dname">{{ f.weekday_short }}</span>
+                                <i class="fa-solid {{ f.icon }} wxa__dicon"></i>
+                                <span class="wxa__dmax">{{ f.temp_max|stringformat:'+d' }}°</span>
+                                <span class="wxa__dmin">{{ f.temp_min|stringformat:'+d' }}°</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="wxa__item">
+                <button type="button" class="wxa__q">{% trans 'Boshqa shaharlar' %} <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="wxa__a">
+                    <p>{% trans 'O‘zbekiston bo‘ylab barcha viloyatlar uchun aniq ob-havo ma’lumotlarini ko‘ring.' %}</p>
+                    <a href="{% url 'weather:index' %}" class="wxa__link">{% trans 'Barcha shaharlar' %} <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# O'NG: katta "qurilma" ekrani + suzuvchi widget #}
+    <div class="wxa__right">
+        <a href="{{ weather_dials.city.get_absolute_url }}" class="wxa__device wxa__device--{{ weather_dials.today.condition|default:'clear' }}">
+            <div class="wxa__screen">
+                <span class="wxa__city">{{ weather_dials.city.name }}</span>
+                <i class="fa-solid {{ weather_dials.today.icon }} wxa__bigicon"></i>
+                <span class="wxa__temp">
+                    {% if weather_dials.today.temp_now != None %}{{ weather_dials.today.temp_now|stringformat:'+d' }}°
+                    {% else %}{{ weather_dials.today.temp_max|stringformat:'+d' }}°{% endif %}
+                </span>
+                <span class="wxa__cond">{{ weather_dials.today.get_condition_display }}</span>
+            </div>
+        </a>
+
+        <div class="wxa__widget" aria-hidden="true">
+            <span class="wxa__wlabel">{% trans 'Bugun' %}</span>
+            <div class="wxa__wrow"><i class="fa-solid fa-temperature-arrow-up"></i> {% trans 'Maks.' %} <b>{{ weather_dials.today.temp_max|stringformat:'+d' }}°</b></div>
+            <div class="wxa__wrow"><i class="fa-solid fa-temperature-arrow-down"></i> {% trans 'Min.' %} <b>{{ weather_dials.today.temp_min|stringformat:'+d' }}°</b></div>
+            <div class="wxa__wrow"><i class="fa-solid {{ weather_dials.today.icon }}"></i> {{ weather_dials.today.get_condition_display }}</div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    document.querySelectorAll('.wxa__q').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var item = btn.closest('.wxa__item');
+            var open = item.classList.contains('is-open');
+            item.closest('.wxa__acc').querySelectorAll('.wxa__item')
+                .forEach(function (i) { i.classList.remove('is-open'); });
+            if (!open) item.classList.add('is-open');
+        });
+    });
+})();
+</script>
+{% endblock %}

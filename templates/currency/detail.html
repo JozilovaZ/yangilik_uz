@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ currency.code }} kursi — UZLIFE{% endblock %}
+
+{% block content %}
+
+<nav class="crumbs">
+    <a href="{% url 'core:home' %}">Bosh sahifa</a>
+    <i class="fa-solid fa-angle-right"></i>
+    <a href="{% url 'currency:index' %}">Valyuta</a>
+    <i class="fa-solid fa-angle-right"></i>
+    <span>{{ currency.code }}</span>
+</nav>
+
+<div class="page-head">
+    <h1 class="page-head__title">
+        {{ currency.flag_emoji }} {{ currency.name }} ({{ currency.code }})
+    </h1>
+    <p class="page-head__note">Manba: Markaziy bank (CBU)</p>
+</div>
+
+{# ---- Asosiy raqam ---- #}
+{% if latest %}
+<section class="fx-hero">
+    <div class="fx-hero__main">
+        <span class="fx-hero__label">1 {{ currency.code }} =</span>
+        <span class="fx-hero__value">{{ latest.rate|floatformat:2 }}</span>
+        <span class="fx-hero__unit">so‘m</span>
+        <div class="fx-hero__meta">
+            {% if latest.is_up %}
+                <span class="trend trend--up"><i class="fa-solid fa-caret-up"></i> {{ latest.diff|floatformat:2 }}</span>
+            {% elif latest.is_down %}
+                <span class="trend trend--down"><i class="fa-solid fa-caret-down"></i> {{ latest.diff|floatformat:2|cut:"-" }}</span>
+            {% else %}
+                <span class="trend">o‘zgarishsiz</span>
+            {% endif %}
+            <span class="dot"></span>
+            <span>{{ latest.date|date:'d.m.Y' }} holatiga</span>
+        </div>
+    </div>
+
+    {% if stats %}
+    <div class="fx-stats">
+        <div class="fx-stat">
+            <span class="fx-stat__label">Eng past ({{ stats.days }} kun)</span>
+            <span class="fx-stat__value">{{ stats.min|floatformat:2 }}</span>
+        </div>
+        <div class="fx-stat">
+            <span class="fx-stat__label">Eng baland ({{ stats.days }} kun)</span>
+            <span class="fx-stat__value">{{ stats.max|floatformat:2 }}</span>
+        </div>
+        <div class="fx-stat">
+            <span class="fx-stat__label">Davr o‘zgarishi</span>
+            <span class="fx-stat__value {% if stats.change > 0 %}is-up{% elif stats.change < 0 %}is-down{% endif %}">
+                {% if stats.change > 0 %}+{% endif %}{{ stats.change|floatformat:2 }}
+            </span>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+
+{# ---- Grafik ---- #}
+<section class="fx-chart">
+    <div class="section-head">
+        <h2 class="section-head__title"><i class="fa-solid fa-chart-line"></i> {{ currency.code }} — 30 kunlik dinamika</h2>
+    </div>
+    <div class="fx-chart__canvas">
+        <canvas id="fxDetailChart" height="120"></canvas>
+    </div>
+</section>
+
+{# ---- Tarix jadvali ---- #}
+<section class="fx-history">
+    <div class="section-head">
+        <h2 class="section-head__title"><i class="fa-regular fa-calendar"></i> Kurs tarixi</h2>
+    </div>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Kurs (so‘m)</th>
+                    <th>O‘zgarish</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in history %}
+                    <tr>
+                        <td>{{ r.date|date:'d.m.Y' }}</td>
+                        <td><b>{{ r.rate|floatformat:2 }}</b></td>
+                        <td>
+                            {% if r.is_up %}
+                                <span class="trend trend--up"><i class="fa-solid fa-caret-up"></i> {{ r.diff|floatformat:2 }}</span>
+                            {% elif r.is_down %}
+                                <span class="trend trend--down"><i class="fa-solid fa-caret-down"></i> {{ r.diff|floatformat:2|cut:"-" }}</span>
+                            {% else %}
+                                <span class="trend">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="3">Ma’lumot yo‘q.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{# ---- Boshqa valyutalar ---- #}
+{% if others %}
+<section class="chips">
+    <span class="chips__label">Boshqa valyutalar:</span>
+    {% for o in others %}
+        <a href="{{ o.get_absolute_url }}" class="chip">{{ o.flag_emoji }} {{ o.code }}</a>
+    {% endfor %}
+</section>
+{% endif %}
+
+{{ chart_json|json_script:"fx-detail-data" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+    var el = document.getElementById('fxDetailChart');
+    if (!el || typeof Chart === 'undefined') return;
+    var raw = JSON.parse(document.getElementById('fx-detail-data').textContent);
+    new Chart(el, {
+        type: 'line',
+        data: {
+            labels: raw.labels,
+            datasets: [{
+                label: raw.code,
+                data: raw.data,
+                borderColor: '#E63329',
+                backgroundColor: 'rgba(230,51,41,.10)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            return ctx.parsed.y.toLocaleString('ru-RU') + ' so‘m';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { ticks: { callback: function (v) { return v.toLocaleString('ru-RU'); } } },
+                x: { ticks: { maxTicksLimit: 10 } }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% load static i18n %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}UZLIFE — O‘zbekiston hayoti{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=30">
+</head>
+<body>
+
+<header class="site-header">
+
+    {# 1-qavat: aylanib turadigan xabarlar (breaking news) #}
+    <div class="topbar">
+        <div class="container topbar__inner">
+            <span class="topbar__label"><i class="fa-solid fa-bolt"></i> {% trans 'Muhim' %}</span>
+            <div class="news-rotator" id="newsRotator">
+                <a href="#" class="news-rotator__item is-active">O‘zbekistonda yangi soliq islohotlari e’lon qilindi</a>
+                <a href="#" class="news-rotator__item">Toshkentda metro yangi bekati ochildi</a>
+                <a href="#" class="news-rotator__item">Dollar kursi bugun barqaror saqlanmoqda</a>
+                <a href="#" class="news-rotator__item">Ob-havo: hafta oxirida yomg‘ir kutilmoqda</a>
+            </div>
+        </div>
+    </div>
+
+    {# 2-qavat: logo + kategoriyalar + qidiruv + til — bitta qatorda #}
+    <div class="mainbar">
+        <div class="container mainbar__inner">
+            <a href="{% url 'core:home' %}" class="logo">UZ<span class="logo__accent">LIFE</span></a>
+
+            <nav class="main-nav" aria-label="Kategoriyalar">
+                {% for cat in categories %}
+                    <a href="{{ cat.get_absolute_url }}" class="main-nav__link">{{ cat.name }}</a>
+                {% endfor %}
+                <a href="{% url 'currency:index' %}" class="main-nav__link">{% trans 'Valyuta' %}</a>
+                <a href="{% url 'weather:index' %}" class="main-nav__link">{% trans 'Ob-havo' %}</a>
+            </nav>
+
+            <div class="mainbar__actions">
+                <form class="search" action="#" role="search" id="searchBox">
+                    <button type="button" class="search__toggle" aria-label="{% trans 'Qidirish' %}" aria-expanded="false">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="search" name="q" class="search__input"
+                           placeholder="{% trans 'Qidirish...' %}" aria-label="{% trans 'Qidirish' %}">
+                </form>
+
+                {% get_current_language as CURRENT_LANG %}
+                <div class="lang-dd" aria-label="Til">
+                    <button type="button" class="lang-dd__toggle" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-solid fa-globe"></i> {{ CURRENT_LANG|upper }}
+                        <i class="fa-solid fa-chevron-down lang-dd__caret"></i>
+                    </button>
+                    <div class="lang-dd__menu">
+                        {% for code, label in LANGUAGES %}
+                            {% if code != CURRENT_LANG %}
+                                <form action="{% url 'set_language' %}" method="post" class="lang-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <input type="hidden" name="language" value="{{ code }}">
+                                    <button type="submit" class="lang-dd__item">{{ code|upper }}</button>
+                                </form>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="user-dd" aria-label="{% trans 'Profil' %}">
+                    <button type="button" class="user-dd__toggle" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-solid fa-circle-user user-dd__avatar"></i>
+                        {% if user.is_authenticated %}<span class="user-dd__name">{{ user.username }}</span>{% endif %}
+                        <i class="fa-solid fa-chevron-down lang-dd__caret"></i>
+                    </button>
+                    <div class="user-dd__menu">
+                        {% if user.is_authenticated %}
+                            <div class="user-dd__head">
+                                <span class="user-dd__avatar-lg">{{ user.username|first|upper }}</span>
+                                <span class="user-dd__hinfo">
+                                    <span class="user-dd__hname">{{ user.username }}</span>
+                                    {% if user.email %}<span class="user-dd__hmail">{{ user.email }}</span>{% endif %}
+                                </span>
+                            </div>
+                            <a href="{% url 'accounts:profile' %}" class="user-dd__link"><i class="fa-solid fa-user"></i> {% trans 'Profil' %}</a>
+                            {% if user.is_staff %}
+                                <a href="{% url 'admin:index' %}" class="user-dd__link"><i class="fa-solid fa-gauge"></i> {% trans 'Boshqaruv' %}</a>
+                            {% endif %}
+                            <form action="{% url 'accounts:logout' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="user-dd__item"><i class="fa-solid fa-right-from-bracket"></i> {% trans 'Chiqish' %}</button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'accounts:login' %}" class="user-dd__link"><i class="fa-solid fa-right-to-bracket"></i> {% trans 'Kirish' %}</a>
+                            <a href="{% url 'accounts:register' %}" class="user-dd__link user-dd__link--accent"><i class="fa-solid fa-user-plus"></i> {% trans 'Ro‘yxatdan o‘tish' %}</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <button class="nav-toggle" aria-label="Menyu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
+            </div>
+        </div>
+    </div>
+
+    {# 3-qavat: dollar + ob-havo lentasi (hozircha namunaviy qiymatlar) #}
+    <div class="ticker">
+        <div class="container ticker__inner">
+            {% for c in currency_ticker %}
+                <a href="{% url 'currency:detail' c.code %}" class="ticker__item">
+                    <b>{{ c.code }}</b> {{ c.rate|floatformat:0 }}
+                    {% if c.is_up %}<span class="ticker__up"><i class="fa-solid fa-caret-up"></i> {{ c.abs_diff|floatformat:0 }}</span>
+                    {% elif c.is_down %}<span class="ticker__down"><i class="fa-solid fa-caret-down"></i> {{ c.abs_diff|floatformat:0 }}</span>{% endif %}
+                </a>
+                <span class="ticker__sep">·</span>
+            {% endfor %}
+            {% if weather_ticker %}
+                <a href="{{ weather_ticker.city.get_absolute_url }}" class="ticker__item">
+                    <i class="fa-solid {{ weather_ticker.icon }}"></i> {{ weather_ticker.city.name }}
+                    <b>{{ weather_ticker.temp|stringformat:'+d' }}°</b>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+</header>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="container footer__inner">
+
+        <div class="footer__brand">
+            <a href="{% url 'core:home' %}" class="logo logo--footer">UZ<span class="logo__accent">LIFE</span></a>
+            <p class="footer__tag">O‘zbekiston hayoti — yangiliklar, valyuta kurslari va ob-havo bir joyda.</p>
+            <div class="footer__social">
+                <a href="#" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+            </div>
+        </div>
+
+        <div class="footer__col">
+            <h4 class="footer__title">{% trans 'Rubrikalar' %}</h4>
+            <ul class="footer__links">
+                {% for cat in categories %}
+                    <li><a href="{{ cat.get_absolute_url }}">{{ cat.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="footer__col">
+            <h4 class="footer__title">{% trans 'Bo‘limlar' %}</h4>
+            <ul class="footer__links">
+                <li><a href="{% url 'core:home' %}">{% trans 'Bosh sahifa' %}</a></li>
+                <li><a href="{% url 'currency:index' %}">{% trans 'Valyuta' %}</a></li>
+                <li><a href="{% url 'weather:index' %}">{% trans 'Ob-havo' %}</a></li>
+            </ul>
+        </div>
+
+        <div class="footer__col">
+            <h4 class="footer__title">{% trans 'Ma‘lumot' %}</h4>
+            <ul class="footer__links">
+                <li><a href="#">{% trans 'Biz haqimizda' %}</a></li>
+                <li><a href="#">{% trans 'Bog‘lanish' %}</a></li>
+                <li><a href="#">{% trans 'Maxfiylik siyosati' %}</a></li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="footer__bottom">
+        <div class="container footer__bottominner">
+            <span>© {% now "Y" %} UZLIFE. {% trans 'Barcha huquqlar himoyalangan.' %}</span>
+            <span class="footer__note">{% trans 'Valyuta kurslari — Markaziy bank (CBU) ma‘lumotlari asosida.' %}</span>
+        </div>
+    </div>
+</footer>
+
+<script src="{% static 'js/main.js' %}?v=30"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Ob-havo — UZLIFE{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+    <h1 class="page-head__title">Ob-havo</h1>
+    <p class="page-head__note">Viloyat yoki tumanni qidiring · Manba: Open-Meteo</p>
+</div>
+
+{# ---- Qidiruv inputi ---- #}
+<form class="wx-search" method="get" action="{% url 'weather:index' %}" role="search">
+    <i class="fa-solid fa-magnifying-glass wx-search__icon"></i>
+    <input class="wx-search__input" type="search" name="q" value="{{ query }}"
+           list="wx-cities" placeholder="Viloyat yoki tuman nomi (masalan: Samarqand)"
+           autocomplete="off">
+    <datalist id="wx-cities">
+        {% for c in cities %}<option value="{{ c.name }}">{% endfor %}
+    </datalist>
+    <button class="wx-search__btn" type="submit">Qidirish</button>
+</form>
+
+{% if not_found %}
+    <p class="wx-search__hint"><i class="fa-solid fa-circle-info"></i>
+        “{{ query }}” bo‘yicha shahar topilmadi. Toshkent ma’lumotlari ko‘rsatilmoqda.</p>
+{% endif %}
+
+{# ==================== Tanlangan shahar — batafsil prognoz ==================== #}
+{% if selected and today %}
+    {% include 'weather/_forecast.html' %}
+{% else %}
+    <p class="dials__empty">Ob-havo ma’lumoti hali yuklanmagan.</p>
+{% endif %}
+
+{# ---- Tez o'tish uchun boshqa shaharlar ---- #}
+{% if cities %}
+<section class="chips">
+    <span class="chips__label">Shaharlar:</span>
+    {% for c in cities %}
+        <a href="?q={{ c.name|urlencode }}" class="chip {% if c.pk == selected.pk %}chip--active{% endif %}">{{ c.name }}</a>
+    {% endfor %}
+</section>
+{% endif %}
+
+{% endblock %}

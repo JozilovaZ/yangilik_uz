@@ -1,0 +1,87 @@
+{# Tanlangan shahar prognozi: 10 kunlik sana-tablar + tanlangan kunning
+   soatlik ob-havosi (namunadagidek). Kutiladi: selected (City), days (ro'yxat:
+   har element {'forecast': f, 'hours': [...]}). #}
+<section class="yw">
+
+    {# Sarlavha #}
+    <div class="yw__bar">
+        <h2 class="yw__city">{{ selected.name }} — ob-havo</h2>
+        <span class="yw__src">10 kunlik prognoz · Manba: Open-Meteo</span>
+    </div>
+
+    {# Sana tablari (gorizontal, aylanuvchi) #}
+    <div class="yw__tabs" id="ywTabs">
+        {% for d in days %}
+            {% with f=d.forecast %}
+            <button type="button"
+                    class="yw-tab {% if f.is_today %}yw-tab--on{% endif %}"
+                    data-idx="{{ forloop.counter0 }}">
+                <span class="yw-tab__name">
+                    {% if f.is_today %}Bugun{% elif forloop.counter0 == 1 %}Ertaga{% else %}{{ f.weekday_short }}{% endif %}
+                </span>
+                <span class="yw-tab__day">{{ f.date|date:'d' }}</span>
+                <i class="fa-solid {{ f.icon }} yw-tab__ic"></i>
+                <span class="yw-tab__mm">{{ f.temp_max|stringformat:'+d' }}°/{{ f.temp_min|stringformat:'+d' }}°</span>
+            </button>
+            {% endwith %}
+        {% endfor %}
+    </div>
+
+    {# Har kun uchun panel: kun sarlavhasi + soatlik qatorlar #}
+    {% for d in days %}
+        {% with f=d.forecast %}
+        <div class="yw-panel {% if not f.is_today %}is-hidden{% endif %}" data-panel="{{ forloop.counter0 }}">
+
+            {# Kun boshi — umumiy holat #}
+            <div class="yw__now">
+                <i class="fa-solid {{ f.icon }} yw__icon"></i>
+                <span class="yw__temp">
+                    {% if f.temp_now != None %}{{ f.temp_now|stringformat:'+d' }}°
+                    {% else %}{{ f.temp_max|stringformat:'+d' }}°{% endif %}
+                </span>
+                <div class="yw__meta">
+                    <span class="yw__date">{{ f.date|date:'l, d F' }}</span>
+                    <span class="yw__cond">{{ f.get_condition_display }}</span>
+                    <span class="yw__range">Kunduzi {{ f.temp_max|stringformat:'+d' }}° · Kechasi {{ f.temp_min|stringformat:'+d' }}°</span>
+                </div>
+            </div>
+
+            {# Soatlik ob-havo #}
+            {% if d.hours %}
+            <div class="yw-hours">
+                {% for h in d.hours %}
+                    <div class="yw-hour">
+                        <span class="yw-hour__time">{{ h.label }}</span>
+                        <i class="fa-solid {{ h.icon }} yw-hour__ic"></i>
+                        <span class="yw-hour__temp">{{ h.temp|stringformat:'+d' }}°</span>
+                        {% if h.feels != None %}
+                            <span class="yw-hour__feels">His {{ h.feels|stringformat:'+d' }}°</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="yw-hours__empty">Bu kun uchun soatlik ma’lumot yo‘q.</p>
+            {% endif %}
+        </div>
+        {% endwith %}
+    {% endfor %}
+</section>
+
+<script>
+(function () {
+    var tabs = document.getElementById('ywTabs');
+    if (!tabs) return;
+    var panels = document.querySelectorAll('.yw-panel');
+    tabs.addEventListener('click', function (e) {
+        var btn = e.target.closest('.yw-tab');
+        if (!btn) return;
+        tabs.querySelectorAll('.yw-tab--on').forEach(function (b) { b.classList.remove('yw-tab--on'); });
+        btn.classList.add('yw-tab--on');
+        var idx = btn.dataset.idx;
+        panels.forEach(function (p) {
+            p.classList.toggle('is-hidden', p.dataset.panel !== idx);
+        });
+    });
+})();
+</script>

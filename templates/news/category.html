@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} — UZLIFE{% endblock %}
+
+{% block content %}
+<section class="catblock" style="margin-top:28px">
+    <div class="section-head">
+        <h1 class="section-head__title">{{ category.name }}</h1>
+    </div>
+
+    {% if articles %}
+    <div class="catblock__grid">
+        {% for a in articles %}
+        <a href="{{ a.get_absolute_url }}" class="scard">
+            <div class="scard__img">
+                {% if a.cover_image %}
+                    <img src="{{ a.cover_image.url }}" alt="{{ a.title }}" loading="lazy">
+                {% else %}
+                    <img src="https://picsum.photos/seed/uzlife-{{ a.pk }}/400/250" alt="{{ a.title }}" loading="lazy">
+                {% endif %}
+            </div>
+            <div class="scard__body">
+                <span class="kicker">{{ a.category.name }}</span>
+                <h3 class="scard__title">{{ a.title }}</h3>
+                {% if a.summary %}<p class="scard__desc">{{ a.summary|truncatechars:110 }}</p>{% endif %}
+                <span class="scard__meta"><i class="fa-regular fa-clock"></i> {{ a.published_at|date:"d.m H:i" }} · <i class="fa-regular fa-eye"></i> {{ a.views_count }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>Bu rubrikada hozircha yangilik yo‘q.</p>
+    {% endif %}
+</section>
+{% endblock %}

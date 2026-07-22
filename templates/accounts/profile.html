@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans 'Profil' %} — UZLIFE{% endblock %}
+
+{% block content %}
+<div class="profile">
+    <div class="profile__card">
+        <div class="profile__head">
+            <div class="profile__avatar">{{ user.username|first|upper }}</div>
+            <div>
+                <h1 class="profile__name">{{ user.get_full_name|default:user.username }}</h1>
+                <span class="profile__role">
+                    {% if user.is_superuser %}{% trans 'Administrator' %}
+                    {% elif user.is_staff %}{% trans 'Muharrir' %}
+                    {% else %}{% trans 'Foydalanuvchi' %}{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <dl class="profile__list">
+            <div class="profile__row">
+                <dt><i class="fa-solid fa-user"></i> {% trans 'Foydalanuvchi nomi' %}</dt>
+                <dd>{{ user.username }}</dd>
+            </div>
+            <div class="profile__row">
+                <dt><i class="fa-solid fa-envelope"></i> {% trans 'Email' %}</dt>
+                <dd>{{ user.email|default:'—' }}</dd>
+            </div>
+            <div class="profile__row">
+                <dt><i class="fa-solid fa-calendar"></i> {% trans 'Ro‘yxatdan o‘tgan' %}</dt>
+                <dd>{{ user.date_joined|date:'d.m.Y' }}</dd>
+            </div>
+        </dl>
+
+        <div class="profile__actions">
+            {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="btn btn--ghost"><i class="fa-solid fa-gauge"></i> {% trans 'Boshqaruv' %}</a>
+            {% endif %}
+            <form action="{% url 'accounts:logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--primary"><i class="fa-solid fa-right-from-bracket"></i> {% trans 'Chiqish' %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

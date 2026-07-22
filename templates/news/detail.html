@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ article.title }} — UZLIFE{% endblock %}
+
+{% block content %}
+<div class="detail">
+<div class="detail__main">
+<article class="article">
+
+    {# Yo'nalish (breadcrumb) #}
+    <nav class="article__crumbs" aria-label="{% trans 'Yo‘nalish' %}">
+        <a href="{% url 'core:home' %}">{% trans 'Bosh sahifa' %}</a>
+        <i class="fa-solid fa-angle-right"></i>
+        <a href="{{ article.category.get_absolute_url }}">{{ article.category.name }}</a>
+    </nav>
+
+    <a href="{{ article.category.get_absolute_url }}" class="article__badge">{{ article.category.name }}</a>
+    <h1 class="article__title">{{ article.title }}</h1>
+
+    {% if article.summary %}<p class="article__lead">{{ article.summary }}</p>{% endif %}
+
+    {# Muallif + meta qatori #}
+    <div class="article__byline">
+        <div class="article__author">
+            {% if article.author %}
+                <span class="article__avatar">{{ article.author.username|first|upper }}</span>
+                <span class="article__authinfo">
+                    <span class="article__authname">{{ article.author.get_full_name|default:article.author.username }}</span>
+                    <span class="article__authmeta"><i class="fa-regular fa-calendar"></i> {{ article.published_at|date:"d.m.Y, H:i" }}</span>
+                </span>
+            {% else %}
+                <span class="article__avatar">U</span>
+                <span class="article__authinfo">
+                    <span class="article__authname">UZLIFE</span>
+                    <span class="article__authmeta"><i class="fa-regular fa-calendar"></i> {{ article.published_at|date:"d.m.Y, H:i" }}</span>
+                </span>
+            {% endif %}
+        </div>
+        <div class="article__stats">
+            <span><i class="fa-regular fa-eye"></i> {{ article.views_count }}</span>
+            <span><i class="fa-regular fa-clock"></i> {% widthratio article.body|wordcount 200 1 %} {% trans 'daqiqa o‘qish' %}</span>
+        </div>
+    </div>
+
+    {% if article.cover_image %}
+        <figure class="article__figure">
+            <img class="article__cover" src="{{ article.cover_image.url }}" alt="{{ article.title }}">
+        </figure>
+    {% else %}
+        <figure class="article__figure">
+            <img class="article__cover" src="https://picsum.photos/seed/uzlife-{{ article.pk }}/1000/560" alt="{{ article.title }}">
+        </figure>
+    {% endif %}
+
+    <div class="article__body">{{ article.body|safe }}</div>
+
+    {# Ulashish paneli #}
+    <div class="article__share">
+        <span class="article__sharelabel"><i class="fa-solid fa-share-nodes"></i> {% trans 'Ulashish' %}</span>
+        <div class="article__sharebtns">
+            <a class="share-btn share-btn--tg" href="https://t.me/share/url?url={{ request.build_absolute_uri }}&text={{ article.title|urlencode }}" target="_blank" rel="noopener" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
+            <a class="share-btn share-btn--fb" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a class="share-btn share-btn--x" href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ article.title|urlencode }}" target="_blank" rel="noopener" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+            <button class="share-btn share-btn--copy" type="button" data-url="{{ request.build_absolute_uri }}" aria-label="{% trans 'Havolani nusxalash' %}"><i class="fa-regular fa-copy"></i></button>
+        </div>
+    </div>
+
+</article>
+</div>{# /.detail__main #}
+
+<aside class="detail__aside">
+    {% if popular %}
+    <div class="sidebox">
+        <div class="sidebox__head"><span class="sidebox__dot"></span><i class="fa-solid fa-fire"></i> {% trans 'Ko‘p o‘qilganlar' %}</div>
+        <div class="sidebox__list">
+            {% for a in popular %}
+            <a href="{{ a.get_absolute_url }}" class="tcard">
+                <span class="tcard__thumb">
+                    {% if a.cover_image %}
+                        <img src="{{ a.cover_image.url }}" alt="{{ a.title }}" loading="lazy">
+                    {% else %}
+                        <img src="https://picsum.photos/seed/uzlife-{{ a.pk }}/160/160" alt="{{ a.title }}" loading="lazy">
+                    {% endif %}
+                </span>
+                <span class="tcard__body">
+                    <span class="tcard__cat">{{ a.category.name }}</span>
+                    <span class="tcard__title">{{ a.title }}</span>
+                    <span class="tcard__meta"><i class="fa-regular fa-eye"></i> {{ a.views_count }}</span>
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if latest %}
+    <div class="sidebox">
+        <div class="sidebox__head"><span class="sidebox__dot"></span><i class="fa-regular fa-clock"></i> {% trans 'So‘nggi yangiliklar' %}</div>
+        <div class="sidebox__list">
+            {% for a in latest %}
+            <a href="{{ a.get_absolute_url }}" class="tcard">
+                <span class="tcard__thumb">
+                    {% if a.cover_image %}
+                        <img src="{{ a.cover_image.url }}" alt="{{ a.title }}" loading="lazy">
+                    {% else %}
+                        <img src="https://picsum.photos/seed/uzlife-{{ a.pk }}/160/160" alt="{{ a.title }}" loading="lazy">
+                    {% endif %}
+                </span>
+                <span class="tcard__body">
+                    <span class="tcard__cat">{{ a.category.name }}</span>
+                    <span class="tcard__title">{{ a.title }}</span>
+                    <span class="tcard__meta"><i class="fa-regular fa-calendar"></i> {{ a.published_at|date:"d.m.Y" }}</span>
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</aside>
+</div>{# /.detail #}
+
+{% if related %}
+<section class="catblock article__related">
+    <div class="section-head">
+        <h2 class="section-head__title">{% trans 'O‘xshash yangiliklar' %}</h2>
+    </div>
+    <div class="catblock__grid">
+        {% for a in related %}
+        <a href="{{ a.get_absolute_url }}" class="scard">
+            <div class="scard__img">
+                {% if a.cover_image %}
+                    <img src="{{ a.cover_image.url }}" alt="{{ a.title }}" loading="lazy">
+                {% else %}
+                    <img src="https://picsum.photos/seed/uzlife-{{ a.pk }}/400/250" alt="{{ a.title }}" loading="lazy">
+                {% endif %}
+            </div>
+            <div class="scard__body">
+                <span class="kicker">{{ a.category.name }}</span>
+                <h3 class="scard__title">{{ a.title }}</h3>
+                {% if a.summary %}<p class="scard__desc">{{ a.summary|truncatechars:90 }}</p>{% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var copyBtn = document.querySelector('.share-btn--copy');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(copyBtn.dataset.url).then(function () {
+                copyBtn.classList.add('is-copied');
+                copyBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(function () {
+                    copyBtn.classList.remove('is-copied');
+                    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                }, 1600);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
