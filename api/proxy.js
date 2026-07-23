@@ -1,5 +1,5 @@
 // ============================================================
-//  Vercel Serverless proksi — /api/* va /media/* so'rovlarini
+//  Vercel Serverless proksi — /api/v1/* va /media/* so'rovlarini
 //  HTTP backendga (SSL'siz) server tomonidan uzatadi.
 //
 //  NEGA KERAK: Vercel HTTPS sayt. Brauzerdan to'g'ridan-to'g'ri
@@ -7,10 +7,10 @@
 //  Vercel "rewrites" proksi esa oddiy http/xom-IP manzilga o'tkazmaydi.
 //  Bu funksiya Node ichida ishlaydi — http backendga bemalol ulanadi.
 //
-//  MARSHRUT:
-//   /api/v1/...        -> filesystem orqali shu funksiyaga tushadi
-//   /media/...         -> vercel.json rewrite bilan /api/media/... ga
-//                         aylanadi va shu yerda /media/... ga qaytariladi
+//  MARSHRUT (vercel.json orqali):
+//   /api/v1/...  ->  /api/proxy?p=/api/v1/...
+//   /media/...   ->  /api/proxy?p=/media/...
+//  Asl yo'l ?p= da keladi; boshqa query paramlar (masalan lang) alohida.
 // ============================================================
 
 const BACKEND = "http://144.91.118.72:8003";
@@ -28,18 +28,33 @@ function readBody(req) {
 export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
-    // req.url query bilan birga keladi: "/api/v1/cities/?lang=uz"
-    let path = req.url || "";
-    // /media/* -> vercel.json uni /api/media/* ga aylantirgan; "/api" ni olib tashlaymiz
-    if (path.startsWith("/api/media/")) path = path.slice(4); // -> "/media/..."
+    const q = req.query || {};
 
-    const target = BACKEND + path;
+    // Asl yo'l ?p= da (vercel.json bergan)
+    let p = q.p || "";
+    if (Array.isArray(p)) p = p[p.length - 1];
+    if (!p) return res.status(400).json({ error: "no_path" });
 
-    // Kiruvchi header'larni uzatamiz (host'ni olib tashlab)
+    // Qolgan query paramlarni (p dan tashqari) qayta yig'amiz
+    const extra = new URLSearchParams();
+    for (const [k, v] of Object.entries(q)) {
+        if (k === "p") continue;
+        if (Array.isArray(v)) v.forEach((x) => extra.append(k, x));
+        else extra.append(k, v);
+    }
+
+    // DRF trailing-slash: oxirgi segmentda nuqta (fayl) bo'lmasa "/" qo'shamiz
+    const last = p.split("/").pop();
+    if (!p.endsWith("/") && !last.includes(".")) p += "/";
+
+    const qs = extra.toString();
+    const target = BACKEND + p + (qs ? "?" + qs : "");
+
+    // Header'larni uzatamiz (host'ni olib tashlab)
     const headers = { ...req.headers };
     delete headers.host;
     delete headers["content-length"];
-    delete headers["accept-encoding"]; // fetch o'zi ochadi
+    delete headers["accept-encoding"];
 
     const method = req.method || "GET";
     const hasBody = !["GET", "HEAD"].includes(method);
@@ -55,7 +70,6 @@ export default async function handler(req, res) {
         res.status(backendRes.status);
         backendRes.headers.forEach((value, key) => {
             const k = key.toLowerCase();
-            // sikllanadigan/mos kelmaydigan header'larni o'tkazmaymiz
             if (["content-encoding", "transfer-encoding", "connection", "content-length"].includes(k)) return;
             res.setHeader(key, value);
         });

@@ -1,6 +1,8 @@
 {
   "rewrites": [
-    { "source": "/media/:path*", "destination": "/api/media/:path*" },
-    { "source": "/((?!api/|media/).*)", "destination": "/index.html" }
+    { "source": "/api/v1/:path*", "destination": "/api/proxy?p=/api/v1/:path*" },
+    { "source": "/media/:path*", "destination": "/api/proxy?p=/media/:path*" },
+    { "source": "/((?!api/|media/).*)", "destination": "/index.html" },
+    { "source": "/api/:path*", "destination": "http://144.91.118.72:8003/api/:path*" }
   ]
 }
