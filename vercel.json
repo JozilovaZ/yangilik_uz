@@ -1,8 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/v1/:path*", "destination": "/api/proxy?p=/api/v1/:path*" },
     { "source": "/media/:path*", "destination": "/api/proxy?p=/media/:path*" },
     { "source": "/((?!api/|media/).*)", "destination": "/index.html" }
   ]
 }
-  
