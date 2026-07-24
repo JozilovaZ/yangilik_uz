@@ -79,6 +79,13 @@ export function clearApiCache() {
 // Asosiy so'rov funksiyasi
 export async function apiFetch(path, { method = "GET", params, body, auth = false } = {}) {
     const url = new URL(API_BASE + path);
+    // Vercel'ning [...path] serverless catch-all funksiyasi trailing slash bilan
+    // tugagan URL'ni TUTMAYDI (o'zining 404'ini beradi). Prod'da proksi funksiya
+    // backend uchun "/"ni o'zi qayta qo'shadi, shuning uchun bu yerda olib tashlaymiz.
+    // Dev'da Vite proksi to'g'ridan-to'g'ri DRF'ga uzatadi — u trailing slash talab qiladi.
+    if (import.meta.env.PROD && url.pathname.length > 1 && url.pathname.endsWith("/")) {
+        url.pathname = url.pathname.replace(/\/+$/, "");
+    }
     url.searchParams.set("lang", getLang());
     if (params) {
         for (const [k, v] of Object.entries(params)) {

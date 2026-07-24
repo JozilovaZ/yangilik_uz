@@ -4,3 +4,4 @@
     { "source": "/((?!api/|media/).*)", "destination": "/index.html" }
   ]
 }
+
